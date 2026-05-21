@@ -19,7 +19,7 @@ Google ChromeのアクティブタブのタイトルとURLをワンキーでク�
 ## 使い方
 
 1. Google Chromeでコピーしたいページを開く
-2. `Cmd + Shift + C` を押す
+2. `Cmd + Ctrl + C` を押す
 3. クリップボードにタイトルとURLがコピーされる
 4. 「Copied!」の通知が表示される
 5. 任意の場所で `Cmd + V` でペースト
@@ -32,7 +32,7 @@ Google ChromeのアクティブタブのタイトルとURLをワンキーでク�
 
 ## ホットキーの変更
 
-`Cmd + Shift + C` はChromeの「要素を検証（DevTools）」と競合します。変更したい場合は:
+`Cmd + Ctrl + C` を変更したい場合は:
 
 1. Alfredの設定を開く
 2. Workflows > Chrome Copy Title URL を選択

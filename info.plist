@@ -48,7 +48,7 @@
 	<key>createdby</key>
 	<string></string>
 	<key>description</key>
-	<string>Cmd+Shift+C to copy Chrome tab title and URL</string>
+	<string>Cmd+Ctrl+C to copy Chrome tab title and URL</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
@@ -67,7 +67,7 @@
 				<key>hotkey</key>
 				<integer>8</integer>
 				<key>hotmod</key>
-				<integer>1179648</integer>
+				<integer>1310720</integer>
 				<key>hotstring</key>
 				<string>C</string>
 				<key>leftcursor</key>
@@ -143,7 +143,7 @@
 		</dict>
 	</array>
 	<key>readme</key>
-	<string>Cmd+Shift+C to copy the active Chrome tab's title and URL to clipboard.
+	<string>Cmd+Ctrl+C to copy the active Chrome tab's title and URL to clipboard.
 
 Output format: Title URL</string>
 	<key>uidata</key>
