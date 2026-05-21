@@ -92,7 +92,7 @@
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>script</key>
-				<string>osascript -e 'tell application "Google Chrome" to return (title of active tab of front window) &amp; " " &amp; (URL of active tab of front window)'</string>
+				<string>osascript -e 'tell application "Google Chrome"' -e 'repeat with w in windows' -e 'try' -e 'set u to URL of active tab of w' -e 'if u starts with "http" then' -e 'return (title of active tab of w) &amp; " " &amp; u' -e 'end if' -e 'end try' -e 'end repeat' -e 'return ""' -e 'end tell'</string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
 				<key>scriptfile</key>
@@ -178,7 +178,7 @@ Output format: Title URL</string>
 		</dict>
 	</dict>
 	<key>version</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
 	<key>webaddress</key>
 	<string></string>
 </dict>
