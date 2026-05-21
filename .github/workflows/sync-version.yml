@@ -1,0 +1,78 @@
+name: Sync version on release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  sync-version:
+    if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME:-${{ github.event.release.tag_name }}}"
+          VERSION="${TAG#v}"
+          if [[ -z "$VERSION" ]]; then
+            echo "Failed to resolve version from tag '$TAG'" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update info.plist version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # 直前行が <key>version</key> かつ次行が <string>...</string> の箇所のみ置換
+          # （オブジェクト内の <key>version</key><integer>N</integer> は <integer> なので影響しない）
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          path = Path("info.plist")
+          text = path.read_text(encoding="utf-8")
+          pattern = re.compile(
+              r"(<key>version</key>\s*\n\s*<string>)[^<]*(</string>)"
+          )
+          new_text, n = pattern.subn(rf"\g<1>{version}\g<2>", text, count=1)
+          if n == 0:
+              raise SystemExit("Could not locate <key>version</key>/<string> pair in info.plist")
+          if new_text == text:
+              print(f"info.plist already at {version}; nothing to do")
+          else:
+              path.write_text(new_text, encoding="utf-8")
+              print(f"Updated info.plist version to {version}")
+          PY
+
+      - name: Repackage .alfredworkflow
+        run: |
+          BUNDLE="Chrome-Copy-Title-URL.alfredworkflow"
+          rm -f "$BUNDLE"
+          zip -q "$BUNDLE" info.plist
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet info.plist Chrome-Copy-Title-URL.alfredworkflow; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git add info.plist Chrome-Copy-Title-URL.alfredworkflow
+          git commit -m "info.plist と .alfredworkflow を v${VERSION} に同期 [skip ci]"
+          git push origin main
