@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate info.plist
+        run: |
+          python3 -c "import plistlib; plistlib.loads(open('info.plist','rb').read())"
+
+      - name: Verify version matches tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          plist_version="$(python3 -c "import plistlib; print(plistlib.loads(open('info.plist','rb').read())['version'])")"
+          tag_version="${TAG#v}"
+          echo "info.plist version: ${plist_version}"
+          echo "tag version:        ${tag_version}"
+          if [ "${plist_version}" != "${tag_version}" ]; then
+            echo "::error::info.plist version (${plist_version}) does not match tag (${tag_version})."
+            exit 1
+          fi
+
+      - name: Build .alfredworkflow
+        run: |
+          zip -r Chrome-Copy-Title-URL.alfredworkflow info.plist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --generate-notes \
+            Chrome-Copy-Title-URL.alfredworkflow

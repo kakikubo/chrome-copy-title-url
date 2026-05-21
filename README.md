@@ -16,6 +16,10 @@ Google ChromeのアクティブタブのタイトルとURLをワンキーでク�
 2. ダウンロードしたファイルをダブルクリック
 3. Alfredのインポート画面が開くので「Import」をクリック
 
+## アップデート
+
+新しいバージョンの `Chrome-Copy-Title-URL.alfredworkflow` を [Releases](https://github.com/kakikubo/chrome-copy-title-url/releases) からダウンロードし、ダブルクリックすると Alfred が既存のワークフローを上書きインポートします。設定したホットキーは維持されます。
+
 ## 使い方
 
 1. Google Chromeでコピーしたいページを開く

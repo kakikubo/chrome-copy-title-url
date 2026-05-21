@@ -7,8 +7,14 @@
 
 ## Build, Test, and Development Commands
 - `plutil -lint info.plist` verifies plist syntax before packaging.
-- `zip -r Chrome-Copy-Title-URL.alfredworkflow info.plist README.md` regenerates the workflow file for release testing.
+- `zip -r Chrome-Copy-Title-URL.alfredworkflow info.plist` regenerates the workflow file locally for smoke testing. Distributed builds come from CI (see Release Workflow below); do not commit the generated zip.
 - `osascript -e 'tell application "Google Chrome" ...'` lets you dry-run modified AppleScript logic directly in the terminal (copy the script body from `info.plist`).
+
+## Release Workflow
+1. Bump `<key>version</key>` in `info.plist` to the new SemVer (`MAJOR.MINOR.PATCH`) and commit. Patch = bug fix, minor = feature, major = breaking change.
+2. Tag the commit with the matching version, prefixed by `v` (e.g. `git tag v1.2.0`).
+3. `git push origin vX.Y.Z` triggers `.github/workflows/release.yml`, which validates the plist, asserts the tag matches `info.plist` version, zips `info.plist` into `Chrome-Copy-Title-URL.alfredworkflow`, and publishes a GitHub Release with auto-generated notes and the workflow attached.
+4. If the CI run fails on the version-mismatch check, delete the remote tag (`git push --delete origin vX.Y.Z`), fix `info.plist`, and retag.
 
 ## Coding Style & Naming Conventions
 - AppleScript blocks use two-space indentation and descriptive variable names (`u` for URL is established; keep it consistent).
