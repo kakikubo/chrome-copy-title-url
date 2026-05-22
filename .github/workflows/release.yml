@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Lint info.plist
+        run: plutil -lint info.plist
+
+      - name: Verify info.plist version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          EXPECTED="${TAG#v}"
+          ACTUAL="$(/usr/libexec/PlistBuddy -c 'Print :version' info.plist)"
+          if [[ "$EXPECTED" != "$ACTUAL" ]]; then
+            echo "::error::info.plist version ($ACTUAL) does not match tag ($TAG, expected $EXPECTED)"
+            exit 1
+          fi
+          echo "info.plist version $ACTUAL matches tag $TAG"
+
+      - name: Build .alfredworkflow
+        run: |
+          BUNDLE="Chrome-Copy-Title-URL.alfredworkflow"
+          rm -f "$BUNDLE"
+          zip -q "$BUNDLE" info.plist
+
+      - name: Publish release
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          BUNDLE="Chrome-Copy-Title-URL.alfredworkflow"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Existing release found for $TAG; publishing and attaching asset"
+            gh release edit "$TAG" --draft=false
+            gh release upload "$TAG" "$BUNDLE" --clobber
+          else
+            echo "No existing release for $TAG; creating with generated notes"
+            gh release create "$TAG" --generate-notes "$BUNDLE"
+          fi
