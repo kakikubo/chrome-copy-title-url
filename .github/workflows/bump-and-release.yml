@@ -1,0 +1,84 @@
+name: Bump and release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: SemVer の bump 種別
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  bump-and-release:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump info.plist version
+        id: bump
+        env:
+          BUMP_TYPE: ${{ inputs.bump_type }}
+        run: |
+          CURRENT="$(/usr/libexec/PlistBuddy -c 'Print :version' info.plist)"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "$BUMP_TYPE" in
+            patch) PATCH=$((PATCH + 1)) ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            *) echo "::error::Unknown bump_type: $BUMP_TYPE"; exit 1 ;;
+          esac
+          NEW="$MAJOR.$MINOR.$PATCH"
+          TAG="v$NEW"
+          echo "Bumping $CURRENT -> $NEW"
+
+          /usr/libexec/PlistBuddy -c "Set :version $NEW" info.plist
+          plutil -lint info.plist
+
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag and push
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add info.plist
+          git commit -m "info.plist の version を ${VERSION} に更新"
+          git tag "$TAG"
+          git push origin HEAD:main
+          git push origin "$TAG"
+
+      - name: Build .alfredworkflow
+        run: |
+          BUNDLE="Chrome-Copy-Title-URL.alfredworkflow"
+          rm -f "$BUNDLE"
+          zip -q "$BUNDLE" info.plist
+
+      - name: Publish release
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          BUNDLE="Chrome-Copy-Title-URL.alfredworkflow"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Existing release found for $TAG; publishing and attaching asset"
+            gh release edit "$TAG" --draft=false
+            gh release upload "$TAG" "$BUNDLE" --clobber
+          else
+            echo "No existing release for $TAG; creating with generated notes"
+            gh release create "$TAG" --generate-notes "$BUNDLE"
+          fi
