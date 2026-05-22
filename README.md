@@ -39,6 +39,18 @@ Google ChromeのアクティブタブのタイトルとURLをワンキーでク�
 3. Hotkey Triggerをダブルクリック
 4. 好みのキーコンビネーションに変更
 
+## リリース手順
+
+GitHub Actions の **Bump and release** ワークフローで自動化されています。
+
+1. リリースしたい変更を main にマージ
+2. Actions タブから **Bump and release** を開き `Run workflow` をクリック
+3. `bump_type` で `patch` / `minor` / `major` を選択して実行
+
+`info.plist` の version 更新コミット、`vX.Y.Z` タグ作成、`.alfredworkflow` のビルドと Release 公開まで自動で行われます。
+
+手動でリリースする場合は `info.plist` の `<key>version</key>` をタグと一致させたうえで `git tag vX.Y.Z && git push origin vX.Y.Z` を実行すると、`release.yml` が同等の処理を行います。
+
 ## 動作環境
 
 - macOS
